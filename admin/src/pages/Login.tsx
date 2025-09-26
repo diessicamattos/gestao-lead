@@ -4,32 +4,67 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/aut
 import { auth } from "../../src/firebase";
 import { Box, Button, Card, CardContent, TextField, Typography, Stack } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 
-export default function Login(){
-  const [email,setEmail] = useState(""); const [pass,setPass] = useState("");
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  const navigate = useNavigate();
 
-  async function doLogin(e:any){
+  async function doLogin(e: any) {
     e.preventDefault();
-    try { await signInWithEmailAndPassword(auth, email, pass); }
-    catch (e:any){ enqueueSnackbar(e.message, { variant:"error" }); }
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      navigate("/"); // 🔥 redireciona para o dashboard
+    } catch (e: any) {
+      enqueueSnackbar(e.message, { variant: "error" });
+    }
   }
-  async function forgot(){
-    if (!email) return enqueueSnackbar("Informe o email", { variant:"warning" });
-    try { await sendPasswordResetEmail(auth, email); enqueueSnackbar("Email de recuperação enviado", { variant:"info" }); }
-    catch (e:any){ enqueueSnackbar(e.message, { variant:"error" }); }
+
+  async function forgot() {
+    if (!email) return enqueueSnackbar("Informe o email", { variant: "warning" });
+    try {
+      await sendPasswordResetEmail(auth, email);
+      enqueueSnackbar("Email de recuperação enviado", { variant: "info" });
+    } catch (e: any) {
+      enqueueSnackbar(e.message, { variant: "error" });
+    }
   }
 
   return (
-    <Box sx={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",p:2}}>
-      <Card sx={{maxWidth:380, width:"100%"}}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 2,
+      }}
+    >
+      <Card sx={{ maxWidth: 380, width: "100%" }}>
         <CardContent>
-          <Typography variant="h5" mb={2}>Entrar</Typography>
+          <Typography variant="h5" mb={2}>
+            Entrar
+          </Typography>
           <form onSubmit={doLogin}>
             <Stack spacing={2}>
-              <TextField label="Email" value={email} onChange={e=>setEmail(e.target.value)} />
-              <TextField label="Senha" type="password" value={pass} onChange={e=>setPass(e.target.value)} />
-              <Button type="submit" variant="contained">Entrar</Button>
-              <Button type="button" onClick={forgot}>Esqueci minha senha</Button>
+              <TextField
+                label="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <TextField
+                label="Senha"
+                type="password"
+                value={pass}
+                onChange={(e) => setPass(e.target.value)}
+              />
+              <Button type="submit" variant="contained">
+                Entrar
+              </Button>
+              <Button type="button" onClick={forgot}>
+                Esqueci minha senha
+              </Button>
             </Stack>
           </form>
         </CardContent>
