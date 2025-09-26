@@ -10,14 +10,24 @@ export interface Lead {
   origem?: string;
   aceitouLGPD?: boolean;
   criadoEm?: any; // Timestamp do Firestore
-  assignedTo?: string | null; // 🔹 agora parte do tipo
-  status?: "novo" | "em_negociacao" | "contatado" | "convertido" | string | null; // 🔹 também
+  updatedAt?: any; // 🔹 novo: última atualização
+  assignedTo?: string | null;
+  status?: "novo" | "em_negociacao" | "contatado" | "convertido" | string | null;
+
+  // 🔹 novos campos para histórico e anotações
+  historico?: {
+    acao: string;       // Ex: "Status alterado para Contatado"
+    usuario: string;    // Nome ou UID de quem fez
+    data: any;          // Timestamp
+  }[];
+  notas?: {
+    texto: string;
+    usuario: string;    // Quem deixou a nota
+    data: any;          // Timestamp
+  }[];
 }
 
-export function useLeads(filters?: {
-  origem?: string;
-  q?: string;
-}) {
+export function useLeads(filters?: { origem?: string; q?: string }) {
   const [leads, setLeads] = useState<Lead[]>([]);
 
   useEffect(() => {
@@ -26,7 +36,7 @@ export function useLeads(filters?: {
       setLeads(
         snap.docs.map((d) => ({
           id: d.id,
-          ...(d.data() as Lead), // 🔹 garante que os campos opcionais entrem
+          ...(d.data() as Lead),
         }))
       );
     });
@@ -41,7 +51,9 @@ export function useLeads(filters?: {
       arr = arr.filter(
         (l) =>
           (l.nome || "").toLowerCase().includes(q) ||
-          (l.telefone || "").toLowerCase().includes(q)
+          (l.telefone || "").toLowerCase().includes(q) ||
+          (l.status || "").toLowerCase().includes(q) ||
+          (l.assignedTo || "").toLowerCase().includes(q)
       );
     }
     return arr;

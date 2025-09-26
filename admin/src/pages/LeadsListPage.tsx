@@ -15,6 +15,12 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -22,8 +28,9 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { db } from "../firebase";
-import { doc, updateDoc, collection, getDocs } from "firebase/firestore";
+import { doc, updateDoc, collection, getDocs, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { useState, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth"; // 🔹 para pegar usuário logado
 
 type LeadExtended = Lead & {
   assignedTo?: string | null;
@@ -41,11 +48,15 @@ export default function LeadsListPage() {
   const navigate = useNavigate();
   const leadsBase = useLeads();
   const leads = leadsBase as LeadExtended[];
+  const { user } = useAuth(); // 🔹 pega usuário logado
 
   // menus de ações
   const [anchorStatusEl, setAnchorStatusEl] = useState<null | HTMLElement>(null);
   const [anchorAssignEl, setAnchorAssignEl] = useState<null | HTMLElement>(null);
   const [selectedLead, setSelectedLead] = useState<LeadExtended | null>(null);
+
+  // modal de detalhes
+  const [openDetails, setOpenDetails] = useState(false);
 
   // lista de representantes
   const [users, setUsers] = useState<User[]>([]);
@@ -55,7 +66,7 @@ export default function LeadsListPage() {
       const snap = await getDocs(collection(db, "users"));
       const reps = snap.docs
         .map((d) => ({ uid: d.id, ...(d.data() as any) }))
-        .filter((u) => u.role === "representante");
+        .filter((u) => u.role === "representante" || u.role === "admin");
       setUsers(reps);
     };
     fetchUsers();
@@ -77,7 +88,15 @@ export default function LeadsListPage() {
 
   const handleUpdateStatus = async (status: string) => {
     if (selectedLead) {
-      await updateDoc(doc(db, "leads", selectedLead.id), { status });
+      await updateDoc(doc(db, "leads", selectedLead.id), {
+        status,
+        updatedAt: serverTimestamp(),
+        historico: arrayUnion({
+          acao: `Status alterado para ${status}`,
+          usuario: user?.email || "Sistema",
+          data: new Date().toISOString(), // ✅ corrigido
+        }),
+      });
     }
     handleCloseStatusMenu();
   };
@@ -98,10 +117,26 @@ export default function LeadsListPage() {
 
   const handleAssignLead = async (uid: string) => {
     if (selectedLead) {
-      await updateDoc(doc(db, "leads", selectedLead.id), { assignedTo: uid });
+      const rep = users.find((u) => u.uid === uid);
+      await updateDoc(doc(db, "leads", selectedLead.id), {
+        assignedTo: uid,
+        updatedAt: serverTimestamp(),
+        historico: arrayUnion({
+          acao: `Lead atribuído para ${rep?.nome || "Admin"}`,
+          usuario: user?.email || "Sistema",
+          data: new Date().toISOString(), // ✅ corrigido
+        }),
+      });
     }
     handleCloseAssignMenu();
   };
+
+  // abrir/fechar detalhes
+  const handleOpenDetails = () => {
+    setOpenDetails(true);
+    handleCloseStatusMenu();
+  };
+  const handleCloseDetails = () => setOpenDetails(false);
 
   // filtros
   let filtered = leads;
@@ -229,6 +264,7 @@ export default function LeadsListPage() {
 
       {/* Menu de status */}
       <Menu anchorEl={anchorStatusEl} open={Boolean(anchorStatusEl)} onClose={handleCloseStatusMenu}>
+        <MenuItem onClick={handleOpenDetails}>👁️ Ver detalhes</MenuItem>
         <MenuItem onClick={() => handleUpdateStatus("novo")}>Marcar como Novo</MenuItem>
         <MenuItem onClick={() => handleUpdateStatus("contatado")}>Marcar como Contatado</MenuItem>
         <MenuItem onClick={() => handleUpdateStatus("em_negociacao")}>Em Negociação</MenuItem>
@@ -237,7 +273,7 @@ export default function LeadsListPage() {
 
       {/* Menu de atribuição */}
       <Menu anchorEl={anchorAssignEl} open={Boolean(anchorAssignEl)} onClose={handleCloseAssignMenu}>
-        <MenuItem onClick={() => handleAssignLead("admin")}>👤 Assumir</MenuItem>
+        <MenuItem onClick={() => handleAssignLead(user?.uid || "admin")}>👤 Assumir</MenuItem>
         {users.length > 0 && (
           <>
             <MenuItem disabled>
@@ -251,6 +287,45 @@ export default function LeadsListPage() {
           </>
         )}
       </Menu>
+
+      {/* Modal de detalhes */}
+      <Dialog open={openDetails} onClose={handleCloseDetails} fullWidth maxWidth="sm">
+        <DialogTitle>Detalhes do Lead</DialogTitle>
+        <DialogContent dividers>
+          {selectedLead ? (
+            <>
+              <Typography variant="subtitle1"><strong>Nome:</strong> {selectedLead.nome}</Typography>
+              <Typography variant="subtitle1"><strong>Telefone:</strong> {selectedLead.telefone}</Typography>
+              <Typography variant="subtitle1"><strong>Status:</strong> {selectedLead.status || "novo"}</Typography>
+              <Typography variant="subtitle1"><strong>Responsável:</strong> {users.find(u => u.uid === selectedLead.assignedTo)?.nome || "-"}</Typography>
+
+              <Box mt={2}>
+                <Typography variant="h6">📌 Histórico</Typography>
+                {Array.isArray((selectedLead as any).historico) ? (
+                  <List>
+                    {(selectedLead as any).historico
+                      .sort((a:any,b:any)=> new Date(b.data).getTime() - new Date(a.data).getTime())
+                      .map((h:any, idx:number) => (
+                        <ListItem key={idx} divider>
+                          <ListItemText
+                            primary={h.acao}
+                            secondary={`${h.usuario} — ${h.data ? new Date(h.data).toLocaleString() : ""}`}
+                          />
+                        </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Nenhum histórico registrado ainda.
+                  </Typography>
+                )}
+              </Box>
+            </>
+          ) : (
+            <Typography>Nenhum lead selecionado.</Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
