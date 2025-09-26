@@ -1,0 +1,12 @@
+{
+  "name": "Leads - Admin",
+  "short_name": "LeadsAdmin",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fb",
+  "theme_color": "#1976d2",
+  "icons": [
+    { "src": "/logo-adaptu.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo-adaptu.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
