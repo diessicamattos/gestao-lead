@@ -1,19 +1,30 @@
-// src/components/WhatsappButton.tsx
-import { Button } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import { cleanPhone } from "../utils/phone";
 
 export default function WhatsappButton({
-  phone, name, fromName
-}: { phone: string; name: string; fromName: string }) {
-  const msg = `Olá ${name}, aqui é ${fromName} da empresa. Vi seu interesse e gostaria de te atender. Podemos falar?`;
-  const url = `https://wa.me/${cleanPhone(phone)}?text=${encodeURIComponent(msg)}`;
+  phone,
+  name,
+}: {
+  phone: string;
+  name?: string;
+}) {
+  if (!phone) return null;
+
+  const url = `https://wa.me/55${phone.replace(/\D/g, "")}?text=Olá%20${encodeURIComponent(
+    name || "tudo bem?"
+  )}`;
+
   return (
-    <Button
-      variant="outlined" color="success" startIcon={<WhatsAppIcon />}
-      onClick={() => window.open(url, "_blank")}
-    >
-      Iniciar chat
-    </Button>
+    <Tooltip title="Iniciar conversa no WhatsApp">
+      <IconButton
+        component="a"
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        color="success"
+      >
+        <WhatsAppIcon />
+      </IconButton>
+    </Tooltip>
   );
 }

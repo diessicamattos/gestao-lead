@@ -1,21 +1,58 @@
 // rep/src/App.tsx
-import { ThemeProvider, CssBaseline, Container } from "@mui/material";
-import { theme } from "../src/theme";
-import { SnackbarProvider } from "notistack";
-import { BrowserRouter } from "react-router-dom";
-import AppRoutes from "./routes/AppRoutes";
+import { useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import { useAuth, AuthProvider } from "./hooks/useAuth";
+import Dashboard from "./pages/Dashboard";
+import LeadsListPage from "./pages/LeadsListPage";
+import LeadDetailsPage from "./pages/LeadDetailsPage";
+import Login from "./pages/Login";
+import { Protected } from "./routes";
 
-export default function App(){
+export default function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline/>
-      <SnackbarProvider maxSnack={3} autoHideDuration={3500}>
-        <BrowserRouter>
-          <Container maxWidth="lg" sx={{py:3}}>
-            <AppRoutes/>
-          </Container>
-        </BrowserRouter>
-      </SnackbarProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
+  );
+}
+
+function AppInner() {
+  const { setUser } = useAuth();
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (u) => setUser(u));
+  }, [setUser]);
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <Protected>
+            <Dashboard />
+          </Protected>
+        }
+      />
+      <Route
+        path="/leads/:type"
+        element={
+          <Protected>
+            <LeadsListPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/lead/:id"
+        element={
+          <Protected>
+            <LeadDetailsPage />
+          </Protected>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

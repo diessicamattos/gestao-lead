@@ -1,4 +1,4 @@
-// src/utils/phone.ts
-export function cleanPhone(p: string) {
+// rep/src/utils/phone.ts
+export function sanitizePhone(p: string) {
   return (p || "").replace(/\D/g, "");
 }

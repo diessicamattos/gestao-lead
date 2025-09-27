@@ -1,14 +1,31 @@
-// src/components/CardKpi.tsx
-import { Card, CardContent, Typography } from "@mui/material";
+// rep/src/components/CardKpi.tsx
+import { Card, CardContent, Typography, Box } from "@mui/material";
 
-export default function CardKpi({ title, value, color = "primary.main" }:{
-  title: string; value: number; color?: string;
+export default function CardKpi({
+  title,
+  value,
+  color,
+  icon,
+}: {
+  title: string;
+  value: number | string;
+  color?: string;
+  icon?: React.ReactNode;
 }) {
   return (
-    <Card>
+    <Card sx={{ height: "100%" }}>
       <CardContent>
-        <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
-        <Typography variant="h3" sx={{ color }}>{value}</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box>{icon}</Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              {title}
+            </Typography>
+            <Typography variant="h4" sx={{ color }}>
+              {value}
+            </Typography>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );

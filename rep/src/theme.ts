@@ -1,15 +1,18 @@
-// src/theme.ts
+// rep/src/theme.ts
 import { createTheme } from "@mui/material/styles";
 
-export const theme = createTheme({
+const theme = createTheme({
   palette: {
-    mode: "light",
+    mode: "dark",
     primary: { main: "#1976d2" },
-    secondary: { main: "#6c5ce7" },
-    success: { main: "#2ecc71" },
-    warning: { main: "#fd7e14" },
-    error: { main: "#e74c3c" },
-    background: { default: "#f8f9fb", paper: "#ffffff" }
+    secondary: { main: "#7c4dff" },
+    success: { main: "#00C49F" },
+    warning: { main: "#ffa726" },
   },
-  shape: { borderRadius: 10 }
+  shape: { borderRadius: 16 },
+  components: {
+    MuiCard: { styleOverrides: { root: { borderRadius: 20 } } },
+  },
 });
+
+export default theme;
